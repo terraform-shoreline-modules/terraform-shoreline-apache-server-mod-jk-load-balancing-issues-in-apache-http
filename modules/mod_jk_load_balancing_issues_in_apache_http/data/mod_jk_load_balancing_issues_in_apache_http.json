@@ -1,0 +1,150 @@
+{
+  "name": "mod_jk_load_balancing_issues_in_apache_http",
+  "description": "This incident type refers to a problem with the load balancing functionality of the Apache HTTP server when using the mod_jk connector. This can cause issues with distributing incoming traffic across multiple servers, resulting in reduced performance or even downtime for the affected services. It is important to address and resolve these issues as quickly as possible to minimize impact on users and ensure the stability of the system.",
+  "params": [
+    {
+      "name": "PATH_TO_MOD_JK_CONFIGURATION_FILE",
+      "value": ""
+    },
+    {
+      "name": "MOD_JK",
+      "value": ""
+    },
+    {
+      "name": "WORKER_NODE_2",
+      "value": ""
+    },
+    {
+      "name": "WORKER_NODE_1",
+      "value": ""
+    },
+    {
+      "name": "PORT",
+      "value": ""
+    },
+    {
+      "name": "DESIRED_LOAD_BALANCING_ALGORITHM",
+      "value": ""
+    },
+    {
+      "name": "LOADBALANCER",
+      "value": ""
+    },
+    {
+      "name": "HOST_NAME",
+      "value": ""
+    },
+    {
+      "name": "K8S_CLUSTER_NAME",
+      "value": ""
+    },
+    {
+      "name": "NAMESPACE",
+      "value": ""
+    }
+  ],
+  "cells": [
+    {
+      "name": "cell_1",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Mod_jk Load Balancing Issues in Apache HTTP.\nThis incident type refers to a problem with the load balancing functionality of the Apache HTTP server when using the mod_jk connector. This can cause issues with distributing incoming traffic across multiple servers, resulting in reduced performance or even downtime for the affected services. It is important to address and resolve these issues as quickly as possible to minimize impact on users and ensure the stability of the system."
+    },
+    {
+      "name": "cell_2",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check if mod_jk is enabled in Apache HTTP"
+    },
+    {
+      "name": "cell_3",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `apachectl -M | grep ${MOD_JK}`"
+    },
+    {
+      "name": "cell_4",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check if the load balancer is configured correctly"
+    },
+    {
+      "name": "cell_5",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `grep -r '<LoadBalancer' /etc/httpd/conf.d/`"
+    },
+    {
+      "name": "cell_6",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check the status of the worker nodes"
+    },
+    {
+      "name": "cell_7",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "host | host_name=$HOST_NAME | invoke_curl_status_check($WORKER_NODE_2, $WORKER_NODE_1, $PORT)"
+    },
+    {
+      "name": "cell_8",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check the Apache error log for any relevant error messages"
+    },
+    {
+      "name": "cell_9",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `tail -n 100 /var/log/httpd/error_log | grep ${MOD_JK}`"
+    },
+    {
+      "name": "cell_10",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check the Apache access log for any relevant traffic patterns"
+    },
+    {
+      "name": "cell_11",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `tail -n 100 /var/log/httpd/access_log | grep ${LOADBALANCER}`"
+    },
+    {
+      "name": "cell_12",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check the network connectivity between the load balancer and worker nodes"
+    },
+    {
+      "name": "cell_13",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "host | host_name=$HOST_NAME | invoke_ping_workers($WORKER_NODE_2, $WORKER_NODE_1)"
+    },
+    {
+      "name": "cell_14",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Restart Apache HTTP server to see if the issue is resolved temporarily."
+    },
+    {
+      "name": "cell_15",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "host | host_name=$HOST_NAME | invoke_stop_and_start_apache()"
+    },
+    {
+      "name": "cell_16",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Adjust the load balancing algorithm used by mod_jk to better suit the specific needs of the system and its traffic patterns."
+    },
+    {
+      "name": "cell_17",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "host | host_name=$HOST_NAME | invoke_new_lb_algorithm_update($PATH_TO_MOD_JK_CONFIGURATION_FILE, $DESIRED_LOAD_BALANCING_ALGORITHM)"
+    }
+  ]
+}
